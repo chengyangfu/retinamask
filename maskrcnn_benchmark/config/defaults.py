@@ -289,7 +289,11 @@ _C.RETINANET.SOFTMAX = False
 # considered for inference
 _C.RETINANET.INFERENCE_TH = 0.05
 
+# "p3p7": Use feature p3p7 for object detection and p3-p5 for mask prediction.
+# "p2p7": Use feature p3p7 for object detection and p2-p5 for mask prediction.
+_C.RETINANET.BACKBONE = "p3p7"
 
+_C.RETINANET.NUM_MASKS_TEST = 50
 # ---------------------------------------------------------------------------- #
 # Solver
 # ---------------------------------------------------------------------------- #

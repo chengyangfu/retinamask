@@ -100,13 +100,19 @@ class RetinaNetModule(torch.nn.Module):
         head = RetinaNetHead(cfg)
         box_coder = BoxCoder(weights=(10., 10., 5., 5.))
 
-        box_selector_test = make_retinanet_postprocessor(cfg, box_coder, is_train=False)
+        box_selector_test = make_retinanet_postprocessor(
+            cfg, 2000, box_coder)
+        box_selector_train = None
+        if self.cfg.MODEL.MASK_ON:
+            box_selector_train = make_retinanet_postprocessor(
+                cfg, 100, box_coder)
 
         loss_evaluator = make_retinanet_loss_evaluator(cfg, box_coder)
 
         self.anchor_generator = anchor_generator
         self.head = head
         self.box_selector_test = box_selector_test
+        self.box_selector_train = box_selector_train
         self.loss_evaluator = loss_evaluator
 
     def forward(self, images, features, targets=None):
@@ -141,7 +147,14 @@ class RetinaNetModule(torch.nn.Module):
             "loss_retina_cls": loss_box_cls,
             "loss_retina_reg": loss_box_reg,
         }
-        return anchors, losses
+        detections = None
+        if self.cfg.MODEL.MASK_ON:
+            with torch.no_grad():
+                detections = self.box_selector_train(
+                    anchors, box_cls, box_regression
+                )
+
+        return (anchors, detections), losses
 
     def _forward_test(self, anchors, box_cls, box_regression):
         boxes = self.box_selector_test(anchors, box_cls, box_regression)
@@ -156,7 +169,7 @@ class RetinaNetModule(torch.nn.Module):
             ]
             boxes = [box[ind] for box, ind in zip(boxes, inds)]
         '''
-        return boxes, {}
+        return (anchors, boxes), {}
 
 
 def build_retinanet(cfg):
