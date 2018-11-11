@@ -20,7 +20,8 @@ class Matcher(object):
     BELOW_LOW_THRESHOLD = -1
     BETWEEN_THRESHOLDS = -2
 
-    def __init__(self, high_threshold, low_threshold, allow_low_quality_matches=False):
+    def __init__(self, high_threshold, low_threshold,
+                 allow_low_quality_matches=False, low_quality_threshold=0.0):
         """
         Args:
             high_threshold (float): quality values greater than or equal to
@@ -38,6 +39,7 @@ class Matcher(object):
         self.high_threshold = high_threshold
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
+        self.low_quality_threshold = low_quality_threshold
 
     def __call__(self, match_quality_matrix):
         """
@@ -84,6 +86,11 @@ class Matcher(object):
         """
         # For each gt, find the prediction with which it has highest quality
         highest_quality_foreach_gt, _ = match_quality_matrix.max(dim=1)
+
+        if self.low_quality_threshold > 0.0:
+            select = highest_quality_foreach_gt >= self.low_quality_threshold
+            highest_quality_foreach_gt = highest_quality_foreach_gt[select]
+            match_quality_matrix = match_quality_matrix[select]
         # Find highest quality match available, even if it is low, including ties
         gt_pred_pairs_of_highest_quality = torch.nonzero(
             match_quality_matrix == highest_quality_foreach_gt[:, None]

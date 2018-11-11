@@ -6,7 +6,7 @@ import time
 import torch
 from torch.distributed import deprecated as dist
 
-from maskrcnn_benchmark.utils.comm import get_world_size
+from maskrcnn_benchmark.utils.comm import get_world_size, get_rank
 from maskrcnn_benchmark.utils.metric_logger import MetricLogger
 
 
@@ -102,7 +102,7 @@ def do_train(
                 )
             )
         if iteration % checkpoint_period == 0 and iteration > 0:
-            checkpointer.save("model_{:07d}".format(iteration), **arguments)
+            checkpointer.save("model_{:07d}".format(iteration+1), **arguments)
 
     checkpointer.save("model_{:07d}".format(iteration), **arguments)
     total_training_time = time.time() - start_training_time

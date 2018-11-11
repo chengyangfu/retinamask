@@ -10,8 +10,8 @@ from maskrcnn_benchmark.structures.image_list import to_image_list
 
 from ..backbone import build_backbone
 from ..rpn.retinanet import build_retinanet
-#from ..roi_heads.roi_heads import build_roi_heads
 from maskrcnn_benchmark.modeling.roi_heads.mask_head.mask_head import build_roi_mask_head
+from maskrcnn_benchmark.modeling.roi_heads.sparsemask_head.mask_head import build_sparse_mask_head
 from maskrcnn_benchmark.structures.boxlist_ops import cat_boxlist
 import copy
 
@@ -32,6 +32,9 @@ class RetinaNet(nn.Module):
         self.mask = None
         if cfg.MODEL.MASK_ON:
             self.mask = build_roi_mask_head(cfg)
+        if cfg.MODEL.SPARSE_MASK_ON:
+            self.mask = build_sparse_mask_head(cfg)
+
 
     def forward(self, images, targets=None):
         """
@@ -60,24 +63,27 @@ class RetinaNet(nn.Module):
             losses = {}
             losses.update(detector_losses)
             if self.mask:
-                # Padding the GT
-                proposals = []
-                for (image_detections, image_targets) in zip(
-                    detections, targets):
-                    merge_list = []
-                    if not isinstance(image_detections, list):
-                        merge_list.append(image_detections.copy_with_fields('labels'))
+                if self.cfg.MODEL.MASK_ON:
+                    # Padding the GT
+                    proposals = []
+                    for (image_detections, image_targets) in zip(
+                        detections, targets):
+                        merge_list = []
+                        if not isinstance(image_detections, list):
+                            merge_list.append(image_detections.copy_with_fields('labels'))
 
-                    if not isinstance(image_targets, list):
-                        merge_list.append(image_targets.copy_with_fields('labels'))
+                        if not isinstance(image_targets, list):
+                            merge_list.append(image_targets.copy_with_fields('labels'))
 
-                    if len(merge_list) == 1:
-                        proposals.append(merge_list[0])
-                    else:
-                        proposals.append(cat_boxlist(merge_list))
-                x, result, mask_losses = self.mask(features, proposals, targets)
+                        if len(merge_list) == 1:
+                            proposals.append(merge_list[0])
+                        else:
+                            proposals.append(cat_boxlist(merge_list))
+                    x, result, mask_losses = self.mask(features, proposals, targets)
+                elif self.cfg.MODEL.SPARSE_MASK_ON:
+                    x, result, mask_losses = self.mask(features, anchors, targets)
 
-            losses.update(mask_losses)
+                losses.update(mask_losses)
             return losses
         else:
             if self.mask:
@@ -96,6 +102,11 @@ class RetinaNet(nn.Module):
 
                     proposals.append(image_detections)
 
-                x, detections, mask_losses = self.mask(features, proposals, targets)
+                if self.cfg.MODEL.SPARSE_MASK_ON:
+                    x, detections, mask_losses = self.mask(
+                        features, proposals, targets
+                    )
+                else:
+                    x, detections, mask_losses = self.mask(features, proposals, targets)
             return detections
 

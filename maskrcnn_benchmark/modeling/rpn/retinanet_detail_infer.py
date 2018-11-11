@@ -9,7 +9,7 @@ from maskrcnn_benchmark.structures.boxlist_ops import remove_small_boxes
 from ..utils import cat
 
 
-class RetinaNetPostProcessor(torch.nn.Module):
+class RetinaNetDetailPostProcessor(torch.nn.Module):
     """
     Performs post-processing on the outputs of the RetinaNet boxes.
     This is only used in the testing.
@@ -32,7 +32,7 @@ class RetinaNetPostProcessor(torch.nn.Module):
             min_size (int)
             box_coder (BoxCoder)
         """
-        super(RetinaNetPostProcessor, self).__init__()
+        super(RetinaNetDetailPostProcessor, self).__init__()
         self.pre_nms_thresh = pre_nms_thresh
         self.pre_nms_top_n = pre_nms_top_n
         self.nms_thresh = nms_thresh
@@ -44,8 +44,7 @@ class RetinaNetPostProcessor(torch.nn.Module):
         self.box_coder = box_coder
 
 
-    def forward_for_single_feature_map(self, anchors, box_cls, box_regression,
-                                      pre_nms_thresh):
+    def forward_for_single_feature_map(self, anchors, box_cls, box_regression):
         """
         Arguments:
             anchors: list[BoxList]
@@ -69,17 +68,10 @@ class RetinaNetPostProcessor(torch.nn.Module):
         num_anchors = A * H * W
 
         results = [[] for _ in range(N)]
-        candidate_inds = box_cls > pre_nms_thresh
+        pre_nms_thresh = self.pre_nms_thresh
+        candidate_inds = box_cls > self.pre_nms_thresh
         if candidate_inds.sum().item() == 0:
-            empty_boxlists = []
-            for a in anchors:
-                empty_boxlist = BoxList(torch.Tensor(0, 4).to(device), a.size)
-                empty_boxlist.add_field(
-                    "labels", torch.LongTensor([]).to(device))
-                empty_boxlist.add_field(
-                    "scores", torch.Tensor([]).to(device))
-                empty_boxlists.append(empty_boxlist)
-            return empty_boxlists
+            return results
 
         pre_nms_top_n = candidate_inds.view(N, -1).sum(1)
         pre_nms_top_n = pre_nms_top_n.clamp(max=self.pre_nms_top_n)
@@ -112,6 +104,13 @@ class RetinaNetPostProcessor(torch.nn.Module):
             boxlist = BoxList(detections, per_anchors.size, mode="xyxy")
             boxlist.add_field("labels", per_class)
             boxlist.add_field("scores", per_box_cls)
+            boxlist.add_field("sparse_off", per_box_loc / 9)
+            boxlist.add_field("sparse_anchor_idx", per_box_loc % 9)
+            boxlist.add_field("sparse_anchors",
+                              per_anchors.bbox[per_box_loc, :].view(-1, 4))
+            boxlist.add_field("sparse_batch",
+                              per_box_loc.clone().fill_(batch_idx))
+
             boxlist = boxlist.clip_to_image(remove_empty=False)
             boxlist = remove_small_boxes(boxlist, self.min_size)
             results[batch_idx] = boxlist
@@ -132,14 +131,16 @@ class RetinaNetPostProcessor(torch.nn.Module):
         sampled_boxes = []
         num_levels = len(box_cls)
         anchors = list(zip(*anchors))
-        for layer, (a, o, b) in enumerate(
-            zip(anchors, box_cls, box_regression)):
-            sampled_boxes.append(
-                self.forward_for_single_feature_map(
-                    a, o, b,
-                    self.pre_nms_thresh if layer < num_levels - 1 else 0
+        for a, o, b in zip(anchors, box_cls, box_regression):
+            sampled_boxes.append(self.forward_for_single_feature_map(a, o, b))
+
+        for layer in range(len(sampled_boxes)):
+            for sampled_boxes_per_image in sampled_boxes[layer]:
+                sampled_boxes_per_image.add_field(
+                    'sparse_layers',
+                    sampled_boxes_per_image.get_field('labels').clone().fill_(layer)
                 )
-            )
+
 
         boxlists = list(zip(*sampled_boxes))
         boxlists = [cat_boxlist(boxlist) for boxlist in boxlists]
@@ -152,6 +153,10 @@ class RetinaNetPostProcessor(torch.nn.Module):
         num_images = len(boxlists)
         results = []
         for i in range(num_images):
+            if len(boxlists[i]) == 0:
+                results.append([])
+                continue
+
             scores = boxlists[i].get_field("scores")
             labels = boxlists[i].get_field("labels")
             boxes = boxlists[i].bbox
@@ -163,24 +168,22 @@ class RetinaNetPostProcessor(torch.nn.Module):
                 if len(inds) == 0:
                     continue
 
-                scores_j = scores[inds]
-                boxes_j = boxes[inds, :].view(-1, 4)
-                boxlist_for_class = BoxList(boxes_j, boxlist.size, mode="xyxy")
-                boxlist_for_class.add_field("scores", scores_j)
+                boxlist_for_class = boxlist[inds]
+                #scores_j = scores[inds]
+                #boxes_j = boxes[inds, :].view(-1, 4)
+                #boxlist_for_class = BoxList(boxes_j, boxlist.size, mode="xyxy")
+                #boxlist_for_class.add_field("scores", scores_j)
                 boxlist_for_class = boxlist_nms(
                     boxlist_for_class, self.nms_thresh,
                     score_field="scores"
                 )
                 num_labels = len(boxlist_for_class)
-                boxlist_for_class.add_field(
-                    "labels", torch.full((num_labels,), j,
-                                         dtype=torch.int64,
-                                         device=scores.device)
-                )
+                #boxlist_for_class.add_field(
+                #    "labels", torch.full((num_labels,), j,
+                #                         dtype=torch.int64,
+                #                         device=scores.device)
+                #)
                 result.append(boxlist_for_class)
-
-            if len(result) == 0:
-                print('temp')
 
             result = cat_boxlist(result)
             number_of_detections = len(result)
@@ -200,7 +203,7 @@ class RetinaNetPostProcessor(torch.nn.Module):
         return results
 
 
-def make_retinanet_postprocessor(
+def make_retinanet_detail_postprocessor(
     config, fpn_post_nms_top_n, rpn_box_coder):
 
     pre_nms_thresh = 0.05
@@ -211,7 +214,7 @@ def make_retinanet_postprocessor(
 
     # nms_thresh = config.MODEL.RPN.NMS_THRESH
     # min_size = config.MODEL.RPN.MIN_SIZE
-    box_selector = RetinaNetPostProcessor(
+    box_selector = RetinaNetDetailPostProcessor(
         pre_nms_thresh=pre_nms_thresh,
         pre_nms_top_n=pre_nms_top_n,
         nms_thresh=nms_thresh,

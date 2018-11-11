@@ -7,6 +7,7 @@ from maskrcnn_benchmark.modeling.box_coder import BoxCoder
 from .retinanet_loss import make_retinanet_loss_evaluator
 from .anchor_generator import make_anchor_generator_retinanet
 from .retinanet_infer import  make_retinanet_postprocessor
+from .retinanet_detail_infer import  make_retinanet_detail_postprocessor
 
 
 class RetinaNetHead(torch.nn.Module):
@@ -39,6 +40,9 @@ class RetinaNetHead(torch.nn.Module):
                     padding=1
                 )
             )
+            if cfg.MODEL.USE_GN:
+                cls_tower.append(nn.GroupNorm(32, in_channels))
+
             cls_tower.append(nn.ReLU())
             bbox_tower.append(
                 nn.Conv2d(
@@ -49,6 +53,9 @@ class RetinaNetHead(torch.nn.Module):
                     padding=1
                 )
             )
+            if cfg.MODEL.USE_GN:
+                bbox_tower.append(nn.GroupNorm(32, in_channels))
+
             bbox_tower.append(nn.ReLU())
 
         self.add_module('cls_tower', nn.Sequential(*cls_tower))
@@ -69,7 +76,9 @@ class RetinaNetHead(torch.nn.Module):
                 if isinstance(l, nn.Conv2d):
                     torch.nn.init.normal_(l.weight, std=0.01)
                     torch.nn.init.constant_(l.bias, 0)
-
+                if isinstance(l, nn.GroupNorm):
+                    torch.nn.init.constant_(l.weight, 1.0)
+                    torch.nn.init.constant_(l.bias, 0)
 
         # retinanet_bias_init
         prior_prob = cfg.RETINANET.PRIOR_PROB
@@ -100,10 +109,14 @@ class RetinaNetModule(torch.nn.Module):
         head = RetinaNetHead(cfg)
         box_coder = BoxCoder(weights=(10., 10., 5., 5.))
 
-        box_selector_test = make_retinanet_postprocessor(
-            cfg, 2000, box_coder)
+        if self.cfg.MODEL.SPARSE_MASK_ON:
+            box_selector_test = make_retinanet_detail_postprocessor(
+                cfg, 100, box_coder)
+        else:
+            box_selector_test = make_retinanet_postprocessor(
+                cfg, 100, box_coder)
         box_selector_train = None
-        if self.cfg.MODEL.MASK_ON:
+        if self.cfg.MODEL.MASK_ON or self.cfg.MODEL.SPARSE_MASK_ON:
             box_selector_train = make_retinanet_postprocessor(
                 cfg, 100, box_coder)
 
@@ -148,7 +161,7 @@ class RetinaNetModule(torch.nn.Module):
             "loss_retina_reg": loss_box_reg,
         }
         detections = None
-        if self.cfg.MODEL.MASK_ON:
+        if self.cfg.MODEL.MASK_ON or self.cfg.MODEL.SPARSE_MASK_ON:
             with torch.no_grad():
                 detections = self.box_selector_train(
                     anchors, box_cls, box_regression

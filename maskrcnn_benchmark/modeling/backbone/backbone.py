@@ -26,6 +26,7 @@ def build_resnet_fpn_backbone(cfg):
         ],
         out_channels=out_channels,
         top_blocks=fpn_module.LastLevelMaxPool(),
+        use_gn=cfg.MODEL.USE_GN
     )
     model = nn.Sequential(OrderedDict([("body", body), ("fpn", fpn)]))
     return model
@@ -44,6 +45,7 @@ def build_resnet_fpn_p3p7_backbone(cfg):
         ],
         out_channels=out_channels,
         top_blocks=fpn_module.LastLevelP6P7(out_channels),
+        use_gn=cfg.MODEL.USE_GN
     )
     model = nn.Sequential(OrderedDict([("body", body), ("fpn", fpn)]))
     return model
@@ -68,6 +70,7 @@ def build_resnet_fpn_p2p7_backbone(cfg):
         ],
         out_channels=out_channels,
         top_blocks=fpn_module.LastLevelP6P7(out_channels),
+        use_gn=cfg.MODEL.USE_GN
     )
     model = nn.Sequential(OrderedDict([("body", body), ("fpn", fpn)]))
     return model

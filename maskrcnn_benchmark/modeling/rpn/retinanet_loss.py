@@ -8,7 +8,9 @@ from torch.nn import functional as F
 
 from ..utils import cat
 
-from maskrcnn_benchmark.layers import smooth_l1_loss
+#from maskrcnn_benchmark.layers import smooth_l1_loss
+from maskrcnn_benchmark.layers import SmoothL1Loss
+from maskrcnn_benchmark.layers import AdjustSmoothL1Loss
 from maskrcnn_benchmark.layers import SigmoidFocalLoss
 from maskrcnn_benchmark.modeling.matcher import Matcher
 from maskrcnn_benchmark.structures.boxlist_ops import boxlist_iou
@@ -35,6 +37,10 @@ class RetinaNetLossComputation(object):
             cfg.RETINANET.LOSS_GAMMA,
             cfg.RETINANET.LOSS_ALPHA
         )
+        if cfg.RETINANET.SELFADJUST_SMOOTH_L1:
+            self.regression_loss = AdjustSmoothL1Loss(4, beta=1.0 /9)
+        else:
+            self.regression_loss = SmoothL1Loss(beta=1.0 / 9)
 
     def match_targets_to_anchors(self, anchor, target):
         match_quality_matrix = boxlist_iou(target, anchor)
@@ -131,13 +137,11 @@ class RetinaNetLossComputation(object):
         regression_targets = torch.cat(regression_targets, dim=0)
         pos_inds = labels > 0
 
-        retinanet_regression_loss = smooth_l1_loss(
+        retinanet_regression_loss = self.regression_loss(
             box_regression[pos_inds],
             regression_targets[pos_inds],
-            beta=1.0 / 9,
             size_average=False,
         ) / (pos_inds.sum() * 4)
-
         labels = labels.int()
 
         retinanet_cls_loss =self.box_cls_loss_func(
@@ -152,12 +156,9 @@ def make_retinanet_loss_evaluator(cfg, box_coder):
     matcher = Matcher(
         cfg.MODEL.RPN.FG_IOU_THRESHOLD,
         cfg.MODEL.RPN.BG_IOU_THRESHOLD,
-        allow_low_quality_matches=True,
+        allow_low_quality_matches=cfg.RETINANET.LOW_QUALITY_MATCHES,
+        low_quality_threshold=cfg.RETINANET.LOW_QUALITY_THRESHOLD
     )
-
-    # fg_bg_sampler = BalancedPositiveNegativeSampler(
-    #   cfg.MODEL.RPN.BATCH_SIZE_PER_IMAGE, cfg.MODEL.RPN.POSITIVE_FRACTION
-    # )
 
     loss_evaluator = RetinaNetLossComputation(
         cfg, matcher, box_coder

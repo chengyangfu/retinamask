@@ -19,13 +19,14 @@ from yacs.config import CfgNode as CN
 # -----------------------------------------------------------------------------
 
 _C = CN()
-
+_C.DEBUG = False
 _C.MODEL = CN()
 _C.MODEL.RPN_ONLY = False
 _C.MODEL.MASK_ON = False
+_C.MODEL.SPARSE_MASK_ON = False
 _C.MODEL.DEVICE = "cuda"
 _C.MODEL.META_ARCHITECTURE = "GeneralizedRCNN"
-
+_C.MODEL.USE_GN = False
 # If the WEIGHT starts with a catalog://, like :R-50, the code will look for
 # the path in paths_catalog. Else, it will use it as the specified absolute
 # path
@@ -192,7 +193,7 @@ _C.MODEL.ROI_MASK_HEAD.MLP_HEAD_DIM = 1024
 _C.MODEL.ROI_MASK_HEAD.CONV_LAYERS = (256, 256, 256, 256)
 _C.MODEL.ROI_MASK_HEAD.RESOLUTION = 14
 _C.MODEL.ROI_MASK_HEAD.SHARE_BOX_FEATURE_EXTRACTOR = True
-
+_C.MODEL.ROI_MASK_HEAD.CANONICAL_LEVEL = 4
 # ---------------------------------------------------------------------------- #
 # ResNe[X]t options (ResNets = {ResNet, ResNeXt}
 # Note that parts of a resnet may be used for both the backbone and the head
@@ -253,6 +254,9 @@ _C.RETINANET.BBOX_REG_WEIGHT = 1.0
 # Smooth L1 loss beta for bbox regression
 _C.RETINANET.BBOX_REG_BETA = 0.11
 
+# Use Self-Adjust Smooth L1 Loss
+_C.RETINANET.SELFADJUST_SMOOTH_L1 = False
+
 # During inference, #locs to select based on cls score before NMS is performed
 # per FPN level
 _C.RETINANET.PRE_NMS_TOP_N = 1000
@@ -294,6 +298,20 @@ _C.RETINANET.INFERENCE_TH = 0.05
 _C.RETINANET.BACKBONE = "p3p7"
 
 _C.RETINANET.NUM_MASKS_TEST = 50
+
+_C.RETINANET.LOW_QUALITY_MATCHES = True
+_C.RETINANET.LOW_QUALITY_THRESHOLD = 0.0
+
+# ---------------------------------------------------------------------------- #
+# SparseMask Options (Follow the Detectron version)
+# ---------------------------------------------------------------------------- #
+_C.MODEL.SPARSE_MASK_HEAD = CN()
+_C.MODEL.SPARSE_MASK_HEAD.PREDICTOR = ""
+_C.MODEL.SPARSE_MASK_HEAD.FEATURE_EXTRACTOR = "SparseMaskFPNFeatureExtractor"
+_C.MODEL.SPARSE_MASK_HEAD.CONV_LAYERS = (256, 256, 256, 256)
+_C.MODEL.SPARSE_MASK_HEAD.RESOLUTION = 14
+
+
 # ---------------------------------------------------------------------------- #
 # Solver
 # ---------------------------------------------------------------------------- #
@@ -334,7 +352,7 @@ _C.TEST.EXPECTED_RESULTS_SIGMA_TOL = 4
 _C.TEST.IMS_PER_BATCH = 8
 
 
-# ---------------------------------------------------------------------------- #
+_C.TEST.DETECTIONS_PER_IMG =100
 # Misc options
 # ---------------------------------------------------------------------------- #
 _C.OUTPUT_DIR = "."

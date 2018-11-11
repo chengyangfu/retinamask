@@ -52,7 +52,7 @@ class Pooler(nn.Module):
     which is available thanks to the BoxList.
     """
 
-    def __init__(self, output_size, scales, sampling_ratio):
+    def __init__(self, output_size, scales, sampling_ratio, canonical_level=4):
         """
         Arguments:
             output_size (list[tuple[int]] or list[int]): output size for the pooled region
@@ -73,7 +73,9 @@ class Pooler(nn.Module):
         # downsamples by a factor of 2 at each level.
         lvl_min = -torch.log2(torch.tensor(scales[0], dtype=torch.float32)).item()
         lvl_max = -torch.log2(torch.tensor(scales[-1], dtype=torch.float32)).item()
-        self.map_levels = LevelMapper(lvl_min, lvl_max)
+        self.map_levels = LevelMapper(
+            lvl_min, lvl_max, canonical_level=canonical_level
+        )
 
     def convert_to_roi_format(self, boxes):
         concat_boxes = cat([b.bbox for b in boxes], dim=0)
