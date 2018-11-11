@@ -44,7 +44,7 @@ class RetinaNetLossComputation(object):
             )
         else:
             self.regression_loss = SmoothL1Loss(
-                beta=RETINANET.BBOX_REG_BETA
+                beta=cfg.RETINANET.BBOX_REG_BETA
             )
 
     def match_targets_to_anchors(self, anchor, target):
