@@ -38,9 +38,14 @@ class RetinaNetLossComputation(object):
             cfg.RETINANET.LOSS_ALPHA
         )
         if cfg.RETINANET.SELFADJUST_SMOOTH_L1:
-            self.regression_loss = AdjustSmoothL1Loss(4, beta=1.0 /9)
+            self.regression_loss = AdjustSmoothL1Loss(
+                4,
+                beta=cfg.RETINANET.BBOX_REG_BETA
+            )
         else:
-            self.regression_loss = SmoothL1Loss(beta=1.0 / 9)
+            self.regression_loss = SmoothL1Loss(
+                beta=RETINANET.BBOX_REG_BETA
+            )
 
     def match_targets_to_anchors(self, anchor, target):
         match_quality_matrix = boxlist_iou(target, anchor)
