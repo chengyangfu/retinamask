@@ -21,7 +21,7 @@ class AdjustSmoothL1Loss(nn.Module):
 
         n = torch.abs(inputs -target)
         with torch.no_grad():
-            if inputs.size(1) > 1:
+            if torch.isnan(n.var(dim=0)).sum().item() == 0:
                 self.running_mean = self.running_mean.to(n.device)
                 self.running_mean *= (1 - self.momentum)
                 self.running_mean += (self.momentum * n.mean(dim=0))
