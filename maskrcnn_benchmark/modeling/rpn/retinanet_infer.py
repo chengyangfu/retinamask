@@ -93,20 +93,22 @@ class RetinaNetPostProcessor(torch.nn.Module):
             anchors)):
 
             # Sort and select TopN
-            per_box_cls = per_box_cls[per_candidate_inds]
+            per_box_cls = per_box_cls.masked_select(per_candidate_inds)
             per_candidate_nonzeros = per_candidate_inds.nonzero()
-            per_box_loc = per_candidate_nonzeros[:, 0]
-            per_class = per_candidate_nonzeros[:, 1]
-            per_class += 1
-            if per_candidate_inds.sum().item() > per_pre_nms_top_n.item():
+            if len(per_candidate_nonzeros) > per_pre_nms_top_n.item():
                 per_box_cls, top_k_indices = \
                         per_box_cls.topk(per_pre_nms_top_n, sorted=False)
-                per_box_loc = per_box_loc[top_k_indices]
-                per_class = per_class[top_k_indices]
+                per_candidate_nonzeros = per_candidate_nonzeros.index_select(
+                    0, top_k_indices)
+
+            per_box_loc, per_class = per_candidate_nonzeros.chunk(2, dim=1)
+            per_class += 1
+            per_box_loc = per_box_loc.view(-1)
+            per_class = per_class.view(-1)
 
             detections = self.box_coder.decode(
-                per_box_regression[per_box_loc, :].view(-1, 4),
-                per_anchors.bbox[per_box_loc, :].view(-1, 4)
+                per_box_regression.index_select(0, per_box_loc).view(-1, 4),
+                per_anchors.bbox.index_select(0, per_box_loc).view(-1, 4)
             )
 
             boxlist = BoxList(detections, per_anchors.size, mode="xyxy")
