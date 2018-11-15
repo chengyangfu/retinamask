@@ -91,6 +91,11 @@ class RetinaNetPostProcessor(torch.nn.Module):
             pre_nms_top_n,
             candidate_inds,
             anchors)):
+        # for batch_idx, (per_box_cls, per_box_regression,
+        #                 per_anchors) in enumerate(zip(
+        #     box_cls,
+        #     box_regression,
+        #     anchors)):
 
             # Sort and select TopN
             per_box_cls = per_box_cls.masked_select(per_candidate_inds)
@@ -105,6 +110,27 @@ class RetinaNetPostProcessor(torch.nn.Module):
             per_class += 1
             per_box_loc = per_box_loc.view(-1)
             per_class = per_class.view(-1)
+            
+            # Merge in one step: try1
+            # per_box_cls, top_k_indices = per_box_cls.view(-1).topk(
+            #     per_pre_nms_top_n, sorted=False)
+
+            # per_box_loc = top_k_indices / C
+            # per_class = top_k_indices % C
+            # per_class += 1
+
+            # Merge in one step: try2
+            # top_k_value, _ = torch.kthvalue(-per_box_cls.cpu().view(-1),
+            #                                 self.pre_nms_top_n)
+            # top_k_value = -top_k_value.to(device)
+            # top_k_value = top_k_value.clamp(min=pre_nms_thresh)
+            # per_candidate_inds = per_box_cls > top_k_value
+            # per_box_cls = per_box_cls.masked_select(per_candidate_inds)
+            # per_candidate_nonzeros = per_candidate_inds.nonzero()
+            # per_box_loc, per_class = per_candidate_nonzeros.chunk(2, dim=1)
+            # per_class += 1
+            # per_box_loc = per_box_loc.view(-1)
+            # per_class = per_class.view(-1)
 
             detections = self.box_coder.decode(
                 per_box_regression.index_select(0, per_box_loc).view(-1, 4),
