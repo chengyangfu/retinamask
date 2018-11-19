@@ -93,22 +93,20 @@ class RetinaNetPostProcessor(torch.nn.Module):
             anchors)):
 
             # Sort and select TopN
-            per_box_cls = per_box_cls.masked_select(per_candidate_inds)
+            per_box_cls = per_box_cls[per_candidate_inds]
             per_candidate_nonzeros = per_candidate_inds.nonzero()
-            if len(per_candidate_nonzeros) > per_pre_nms_top_n.item():
+            per_box_loc = per_candidate_nonzeros[:, 0]
+            per_class = per_candidate_nonzeros[:, 1]
+            per_class += 1
+            if per_candidate_inds.sum().item() > per_pre_nms_top_n.item():
                 per_box_cls, top_k_indices = \
                         per_box_cls.topk(per_pre_nms_top_n, sorted=False)
-                per_candidate_nonzeros = per_candidate_nonzeros.index_select(
-                    0, top_k_indices)
+                per_box_loc = per_box_loc[top_k_indices]
+                per_class = per_class[top_k_indices]
 
-            per_box_loc, per_class = per_candidate_nonzeros.chunk(2, dim=1)
-            per_class += 1
-            per_box_loc = per_box_loc.view(-1)
-            per_class = per_class.view(-1)
-            
             detections = self.box_coder.decode(
-                per_box_regression.index_select(0, per_box_loc).view(-1, 4),
-                per_anchors.bbox.index_select(0, per_box_loc).view(-1, 4)
+                per_box_regression[per_box_loc, :].view(-1, 4),
+                per_anchors.bbox[per_box_loc, :].view(-1, 4)
             )
 
             boxlist = BoxList(detections, per_anchors.size, mode="xyxy")
@@ -139,7 +137,7 @@ class RetinaNetPostProcessor(torch.nn.Module):
             sampled_boxes.append(
                 self.forward_for_single_feature_map(
                     a, o, b,
-                    self.pre_nms_thresh if layer < num_levels - 1 else 0
+                    self.pre_nms_thresh
                 )
             )
 
@@ -181,24 +179,28 @@ class RetinaNetPostProcessor(torch.nn.Module):
                 )
                 result.append(boxlist_for_class)
 
-            if len(result) == 0:
-                print('temp')
+            if len(result) > 0:
+                result = cat_boxlist(result)
+                number_of_detections = len(result)
 
-            result = cat_boxlist(result)
-            number_of_detections = len(result)
-
-            # Limit to max_per_image detections **over all classes**
-            if number_of_detections > self.fpn_post_nms_top_n > 0:
-                cls_scores = result.get_field("scores")
-                image_thresh, _ = torch.kthvalue(
-                    cls_scores.cpu(),
-                    number_of_detections - self.fpn_post_nms_top_n + 1
-                )
-                keep = cls_scores >= image_thresh.item()
-                keep = torch.nonzero(keep).squeeze(1)
-                result = result[keep]
-            results.append(result)
-
+                # Limit to max_per_image detections **over all classes**
+                if number_of_detections > self.fpn_post_nms_top_n > 0:
+                    cls_scores = result.get_field("scores")
+                    image_thresh, _ = torch.kthvalue(
+                        cls_scores.cpu(),
+                        number_of_detections - self.fpn_post_nms_top_n + 1
+                    )
+                    keep = cls_scores >= image_thresh.item()
+                    keep = torch.nonzero(keep).squeeze(1)
+                    result = result[keep]
+                results.append(result)
+            else:
+                empty_boxlist = BoxList(torch.zeros(1, 4).to('cuda'), boxlist.size)
+                empty_boxlist.add_field(
+                    "labels", torch.LongTensor([1]).to('cuda'))
+                empty_boxlist.add_field(
+                    "scores", torch.Tensor([0.01]).to('cuda'))
+                results.append(empty_boxlist)
         return results
 
 
@@ -206,7 +208,7 @@ def make_retinanet_postprocessor(
     config, fpn_post_nms_top_n, rpn_box_coder):
 
     pre_nms_thresh = 0.05
-    pre_nms_top_n = 1000
+    pre_nms_top_n =  config.RETINANET.PRE_NMS_TOP_N
     nms_thresh = 0.4
     fpn_post_nms_top_n = fpn_post_nms_top_n
     min_size = 0
