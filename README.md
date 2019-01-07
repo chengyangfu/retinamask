@@ -19,10 +19,9 @@ Please cite RetinaMask in your publications if it helps your research:
 ### Contents
 1. [Installation](#installation)
 2. [Models](#models)
-3. [Test](#test)
 
 ### Installation 
-Follow the [maskrcnn-benchmark](./OLD_README.md) to install code and set up the dataset. 
+Follow the [maskrcnn-benchmark](./OLD_README.md) to install code and set up the dataset. Use config files in ./configs/retina/ for Training and Testing.
 
 
 ### Models
@@ -34,7 +33,7 @@ Follow the [maskrcnn-benchmark](./OLD_README.md) to install code and set up the 
 | ResNet-101-FPN-GN | 41.7/61.7/45.0/23.5/44.7/52.8 | 36.7/58.8/39.3/16.4/39.4/52.6 | [link](https://drive.google.com/file/d/19MCU9Q0YXbIrc4fRSPRV53T_RSxiVqh0/view?usp=sharing) | 
 | ResNeXt32x8d-101-FPN  | 42.6/62.5/46.0/24.8/45.6/53.8 | 37.4/59.8/40.0/17.6/39.9/53.4 | [link](https://drive.google.com/file/d/1n-tcTUZ28s0uvDOB_gZmsFtxA8flGxKF/view?usp=sharing) |
 
-### Test
+#### Run Inference
 Use the following scripts. (Assume models are download to the ./model directory)
 Run Mask and BBox
 ```
