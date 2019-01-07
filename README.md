@@ -38,11 +38,11 @@ Follow the [maskrcnn-benchmark](./OLD_README.md) to install code and set up the 
 Use the following scripts. (Assume models are download to the ./models directory)
 Run Mask and BBox
 ```
-python tools/test_net.py --config-file ./configs/retina/retinanet_mask_R-50-FPN_2x_adjust_std011_ms.yaml MODEL.WEIGHT ./models/retinanet_mask_R-101-FPN_2x_adjust_std011_ms_model.pth
+python tools/test_net.py --config-file ./configs/retina/retinanet_mask_R-50-FPN_2x_adjust_std011_ms.yaml MODEL.WEIGHT ./models/retinanet_mask_R-50-FPN_2x_adjust_std011_ms_model.pth
 
 ```
 Run BBox only
 ```
-python tools/test_net.py --config-file ./configs/retina/retinanet_mask_R-50-FPN_2x_adjust_std011_ms.yaml MODEL.WEIGHT ./models/retinanet_mask_R-101-FPN_2x_adjust_std011_ms_model.pth MODEL.MASK_ON False
+python tools/test_net.py --config-file ./configs/retina/retinanet_mask_R-50-FPN_2x_adjust_std011_ms.yaml MODEL.WEIGHT ./models/retinanet_mask_R-50-FPN_2x_adjust_std011_ms_model.pth MODEL.MASK_ON False
 
 ```
