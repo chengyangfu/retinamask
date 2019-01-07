@@ -34,7 +34,7 @@ Follow the [maskrcnn-benchmark](./OLD_README.md) to install code and set up the 
 | ResNeXt32x8d-101-FPN  | 42.6/62.5/46.0/24.8/45.6/53.8 | 37.4/59.8/40.0/17.6/39.9/53.4 | [link](https://drive.google.com/file/d/1n-tcTUZ28s0uvDOB_gZmsFtxA8flGxKF/view?usp=sharing) |
 
 #### Run Inference
-Use the following scripts. (Assume models are download to the ./model directory)
+Use the following scripts. (Assume models are download to the ./models directory)
 Run Mask and BBox
 ```
 python tools/test_net.py --config-file ./configs/retina/retinanet_mask_R-50-FPN_2x_adjust_std011_ms.yaml MODEL.WEIGHT ./models/retinanet_mask_R-101-FPN_2x_adjust_std011_ms_model.pth
