@@ -3,6 +3,7 @@ The code will be release soon.
 
 The code is based on the [maskrcnn-benchmark](https://github.com/facebookresearch/maskrcnn-benchmark).
 
+![alt text](arch.png)
 
 
 ### Citing RetinaMask
