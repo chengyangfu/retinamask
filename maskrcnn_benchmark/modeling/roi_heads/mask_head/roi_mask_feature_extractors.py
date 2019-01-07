@@ -28,6 +28,7 @@ class MaskRCNNFPNFeatureExtractor(nn.Module):
             output_size=(resolution, resolution),
             scales=scales,
             sampling_ratio=sampling_ratio,
+            canonical_level=cfg.MODEL.ROI_MASK_HEAD.CANONICAL_LEVEL,
         )
         input_size = cfg.MODEL.BACKBONE.OUT_CHANNELS
         self.pooler = pooler

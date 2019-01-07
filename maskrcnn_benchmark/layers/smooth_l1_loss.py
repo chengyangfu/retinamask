@@ -2,6 +2,15 @@
 import torch
 
 
+class SmoothL1Loss(torch.nn.Module):
+    def __init__(self, beta=1. /9):
+        super(SmoothL1Loss, self).__init__()
+        self.beta = beta
+
+    def forward(self, input, target, size_average=True):
+        return smooth_l1_loss(input, target, self.beta, size_average)
+
+
 # TODO maybe push this to nn?
 def smooth_l1_loss(input, target, beta=1. / 9, size_average=True):
     """

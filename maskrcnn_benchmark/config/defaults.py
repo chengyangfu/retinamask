@@ -19,13 +19,14 @@ from yacs.config import CfgNode as CN
 # -----------------------------------------------------------------------------
 
 _C = CN()
-
+_C.DEBUG = False
 _C.MODEL = CN()
 _C.MODEL.RPN_ONLY = False
 _C.MODEL.MASK_ON = False
+_C.MODEL.SPARSE_MASK_ON = False
 _C.MODEL.DEVICE = "cuda"
 _C.MODEL.META_ARCHITECTURE = "GeneralizedRCNN"
-
+_C.MODEL.USE_GN = False
 # If the WEIGHT starts with a catalog://, like :R-50, the code will look for
 # the path in paths_catalog. Else, it will use it as the specified absolute
 # path
@@ -37,7 +38,7 @@ _C.MODEL.WEIGHT = ""
 # -----------------------------------------------------------------------------
 _C.INPUT = CN()
 # Size of the smallest side of the image during training
-_C.INPUT.MIN_SIZE_TRAIN = 800  # (800,)
+_C.INPUT.MIN_SIZE_TRAIN = (800,) # 800
 # Maximum size of the side of the image during training
 _C.INPUT.MAX_SIZE_TRAIN = 1333
 # Size of the smallest side of the image during testing
@@ -192,7 +193,7 @@ _C.MODEL.ROI_MASK_HEAD.MLP_HEAD_DIM = 1024
 _C.MODEL.ROI_MASK_HEAD.CONV_LAYERS = (256, 256, 256, 256)
 _C.MODEL.ROI_MASK_HEAD.RESOLUTION = 14
 _C.MODEL.ROI_MASK_HEAD.SHARE_BOX_FEATURE_EXTRACTOR = True
-
+_C.MODEL.ROI_MASK_HEAD.CANONICAL_LEVEL = 4
 # ---------------------------------------------------------------------------- #
 # ResNe[X]t options (ResNets = {ResNet, ResNeXt}
 # Note that parts of a resnet may be used for both the backbone and the head
@@ -220,6 +221,96 @@ _C.MODEL.RESNETS.RES5_DILATION = 1
 
 _C.MODEL.RESNETS.RES2_OUT_CHANNELS = 256
 _C.MODEL.RESNETS.STEM_OUT_CHANNELS = 64
+
+
+# ---------------------------------------------------------------------------- #
+# RetinaNet Options (Follow the Detectron version)
+# ---------------------------------------------------------------------------- #
+_C.RETINANET = CN()
+
+# RetinaNet is used (instead of Fast/er/Mask R-CNN/R-FCN/RPN) if True
+_C.RETINANET.RETINANET_ON = False
+
+# This is the number of foreground classes, background is not included.
+_C.RETINANET.NUM_CLASSES = 81
+
+# Anchor aspect ratios to use
+_C.RETINANET.ANCHOR_SIZES = (32, 64, 128, 256, 512)
+_C.RETINANET.ASPECT_RATIOS = (0.5, 1.0, 2.0)
+_C.RETINANET.ANCHOR_STRIDES = (8, 16, 32, 64, 128)
+_C.RETINANET.STRADDLE_THRESH = 0
+
+# Anchor scales per octave
+_C.RETINANET.OCTAVE = 2.0
+_C.RETINANET.SCALES_PER_OCTAVE = 3
+
+# Convolutions to use in the cls and bbox tower
+# NOTE: this doesn't include the last conv for logits
+_C.RETINANET.NUM_CONVS = 4
+
+# Weight for bbox_regression loss
+_C.RETINANET.BBOX_REG_WEIGHT = 1.0
+
+# Smooth L1 loss beta for bbox regression
+_C.RETINANET.BBOX_REG_BETA = 0.11
+
+# Use Self-Adjust Smooth L1 Loss
+_C.RETINANET.SELFADJUST_SMOOTH_L1 = False
+
+# During inference, #locs to select based on cls score before NMS is performed
+# per FPN level
+_C.RETINANET.PRE_NMS_TOP_N = 1000
+
+# IoU overlap ratio for labeling an anchor as positive
+# Anchors with >= iou overlap are labeled positive
+_C.RETINANET.POSITIVE_OVERLAP = 0.5
+
+# IoU overlap ratio for labeling an anchor as negative
+# Anchors with < iou overlap are labeled negative
+_C.RETINANET.NEGATIVE_OVERLAP = 0.4
+
+# Focal loss parameter: alpha
+_C.RETINANET.LOSS_ALPHA = 0.25
+
+# Focal loss parameter: gamma
+_C.RETINANET.LOSS_GAMMA = 2.0
+
+# Prior prob for the positives at the beginning of training. This is used to set
+# the bias init for the logits layer
+_C.RETINANET.PRIOR_PROB = 0.01
+
+# Whether classification and bbox branch tower should be shared or not
+_C.RETINANET.SHARE_CLS_BBOX_TOWER = False
+
+# Use class specific bounding box regression instead of the default class
+# agnostic regression
+_C.RETINANET.CLASS_SPECIFIC_BBOX = False
+
+# Whether softmax should be used in classification branch training
+_C.RETINANET.SOFTMAX = False
+
+# Inference cls score threshold, anchors with score > INFERENCE_TH are
+# considered for inference
+_C.RETINANET.INFERENCE_TH = 0.05
+
+# "p3p7": Use feature p3p7 for object detection and p3-p5 for mask prediction.
+# "p2p7": Use feature p3p7 for object detection and p2-p5 for mask prediction.
+_C.RETINANET.BACKBONE = "p3p7"
+
+_C.RETINANET.NUM_MASKS_TEST = 50
+
+_C.RETINANET.LOW_QUALITY_MATCHES = True
+_C.RETINANET.LOW_QUALITY_THRESHOLD = 0.0
+
+# ---------------------------------------------------------------------------- #
+# SparseMask Options (Follow the Detectron version)
+# ---------------------------------------------------------------------------- #
+_C.MODEL.SPARSE_MASK_HEAD = CN()
+_C.MODEL.SPARSE_MASK_HEAD.PREDICTOR = ""
+_C.MODEL.SPARSE_MASK_HEAD.FEATURE_EXTRACTOR = "SparseMaskFPNFeatureExtractor"
+_C.MODEL.SPARSE_MASK_HEAD.CONV_LAYERS = (256, 256, 256, 256)
+_C.MODEL.SPARSE_MASK_HEAD.RESOLUTION = 14
+
 
 # ---------------------------------------------------------------------------- #
 # Solver
@@ -261,7 +352,7 @@ _C.TEST.EXPECTED_RESULTS_SIGMA_TOL = 4
 _C.TEST.IMS_PER_BATCH = 8
 
 
-# ---------------------------------------------------------------------------- #
+_C.TEST.DETECTIONS_PER_IMG =100
 # Misc options
 # ---------------------------------------------------------------------------- #
 _C.OUTPUT_DIR = "."

@@ -8,6 +8,22 @@ class DatasetCatalog(object):
     DATA_DIR = "datasets"
 
     DATASETS = {
+        "coco_test-dev": (
+            "coco/test2017",
+            "coco/annotations/image_info_test-dev2017.json",
+        ),
+        "coco_2017_test": (
+            "coco/test2017",
+            "coco/annotations/image_info_test2017.json",
+        ),
+        "coco_2017_train": (
+            "coco/train2017",
+            "coco/annotations/instances_train2017.json",
+        ),
+        "coco_2017_val": (
+            "coco/val2017",
+            "coco/annotations/instances_val2017.json",
+        ),
         "coco_2014_train": (
             "coco/train2014",
             "coco/annotations/instances_train2014.json",
