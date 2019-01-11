@@ -1,5 +1,4 @@
 # RetinaMask
-The code will be release soon.
 
 The code is based on the [maskrcnn-benchmark](https://github.com/facebookresearch/maskrcnn-benchmark).
 
@@ -34,7 +33,7 @@ Follow the [maskrcnn-benchmark](./OLD_README.md) to install code and set up the 
 | ResNet-101-FPN-GN | 41.7/61.7/45.0/23.5/44.7/52.8 | 0.153 | 36.7/58.8/39.3/16.4/39.4/52.6 | 0.164 | [link](https://drive.google.com/file/d/19MCU9Q0YXbIrc4fRSPRV53T_RSxiVqh0/view?usp=sharing) | 
 | ResNeXt32x8d-101-FPN  | 42.6/62.5/46.0/24.8/45.6/53.8 | 0.231 | 37.4/59.8/40.0/17.6/39.9/53.4 | 0.270 | [link](https://drive.google.com/file/d/1n-tcTUZ28s0uvDOB_gZmsFtxA8flGxKF/view?usp=sharing) |
 
-P.S. evaluation metric: AP, AP50, AP75, AP(small), AP(medium), AP(large), please refer to [COCO](http://cocodataset.org/#detection-eval) for detailed explanation. The inference time is measure on Nvidia 1080Ti.
+P.S. evaluation metric: AP, AP50, AP75, AP(small), AP(medium), AP(large), please refer to [COCO](http://cocodataset.org/#detection-eval) for detailed explanation. The inference time is measured on Nvidia 1080Ti.
 
 
 #### Run Inference
