@@ -27,7 +27,7 @@ Follow the [maskrcnn-benchmark](./OLD_README.md) to install code and set up the 
 
 ### Models
 
-| Models         | BBox          |    | Mask  |     | Link |
+| Models         | BBox          | B(time)   | Mask  | M(time)    | Link |
 | -------------- | ------------- | ---| ----- | --- | ---- |
 | ResNet-50-FPN  | 39.4/58.6/42.3/21.9/42.0/51.0 | 0.124 | 34.9/55.7/37.1/15.1/36.7/50.4 | 0.139 | [link](https://drive.google.com/file/d/17QnkNoibgzRnnSeLDFo27LmgPUifFBxz/view?usp=sharing) |
 | ResNet-101-FPN | 41.4/ 60.8/44.6/23.0/44.5/53.5 | 0.145 | 36.6/58.0/39.1/16.2/38.8/52.7 | 0.160 | [link](https://drive.google.com/file/d/1Fl-TI1oDRVBFYI1h1mn7IiEOXwTIR3AC/view?usp=sharing) |
