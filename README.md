@@ -11,7 +11,7 @@ Please cite RetinaMask in your publications if it helps your research:
     @inproceedings{fu2019retinamask,
       title = {{RetinaMask}: Learning to predict masks improves state-of-the-art single-shot detection for free},
       author = {Fu, Cheng-Yang and  Shvets, Mykhailo and Berg, Alexander C.},
-      booktitle = {arXiv},
+      booktitle = {arXiv preprint arXiv:1901.03353},
       year = {2019}
     }
 
