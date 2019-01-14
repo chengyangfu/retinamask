@@ -11,7 +11,7 @@ from maskrcnn_benchmark.structures.image_list import to_image_list
 from ..backbone import build_backbone
 from ..rpn.retinanet import build_retinanet
 from maskrcnn_benchmark.modeling.roi_heads.mask_head.mask_head import build_roi_mask_head
-from maskrcnn_benchmark.modeling.roi_heads.sparsemask_head.mask_head import build_sparse_mask_head
+#from maskrcnn_benchmark.modeling.roi_heads.sparsemask_head.mask_head import build_sparse_mask_head
 from maskrcnn_benchmark.structures.boxlist_ops import cat_boxlist
 import copy
 
@@ -32,8 +32,8 @@ class RetinaNet(nn.Module):
         self.mask = None
         if cfg.MODEL.MASK_ON:
             self.mask = build_roi_mask_head(cfg)
-        if cfg.MODEL.SPARSE_MASK_ON:
-            self.mask = build_sparse_mask_head(cfg)
+        #if cfg.MODEL.SPARSE_MASK_ON:
+        #    self.mask = build_sparse_mask_head(cfg)
 
 
     def forward(self, images, targets=None):

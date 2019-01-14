@@ -3,19 +3,6 @@
 #include <torch/extension.h>
 
 
-at::Tensor SparseSelect_forward_cuda(
-		const at::Tensor& features,
-                const at::Tensor& batches,
-		const at::Tensor& offsets,
-		const int kernel_size);
-
-void SparseSelect_backward_cuda(
-		at::Tensor& d_features,
-                const at::Tensor& batches,
-		const at::Tensor& offsets,
-		const int kernel_size, 
-		const at::Tensor& d_outputs);
-
 at::Tensor SigmoidFocalLoss_forward_cuda(
 		const at::Tensor& logits,
                 const at::Tensor& targets,

@@ -3,13 +3,6 @@
 #include <torch/extension.h>
 
 
-at::Tensor SparseSelect_forward_cpu(
-		const at::Tensor& features,
-                const at::Tensor& batches,
-		const at::Tensor& offsets,
-		const int kernel_size);
-
-
 at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
                                 const at::Tensor& rois,
                                 const float spatial_scale,
