@@ -94,15 +94,15 @@ class RetinaNetPostProcessor(torch.nn.Module):
 
             # Sort and select TopN
             per_box_cls = per_box_cls[per_candidate_inds]
-            per_candidate_nonzeros = per_candidate_inds.nonzero()
+            per_box_cls, top_k_indices = \
+                    per_box_cls.topk(per_pre_nms_top_n, sorted=False)
+
+            per_candidate_nonzeros = \
+                    per_candidate_inds.nonzero()[top_k_indices, :]
+
             per_box_loc = per_candidate_nonzeros[:, 0]
             per_class = per_candidate_nonzeros[:, 1]
             per_class += 1
-            if per_candidate_inds.sum().item() > per_pre_nms_top_n.item():
-                per_box_cls, top_k_indices = \
-                        per_box_cls.topk(per_pre_nms_top_n, sorted=False)
-                per_box_loc = per_box_loc[top_k_indices]
-                per_class = per_class[top_k_indices]
 
             detections = self.box_coder.decode(
                 per_box_regression[per_box_loc, :].view(-1, 4),
