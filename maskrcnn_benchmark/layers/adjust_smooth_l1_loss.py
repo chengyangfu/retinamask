@@ -31,23 +31,7 @@ class AdjustSmoothL1Loss(nn.Module):
 
 
         beta = (self.running_mean - self.running_var)
-
-        self.logger.info('AdjustSmoothL1(mean): {:.3}, {:.3}, {:.3}, {:.3}'.format(
-            self.running_mean[0].item(),
-            self.running_mean[1].item(),
-            self.running_mean[2].item(),
-            self.running_mean[3].item()
-        ))
-        self.logger.info('AdjustSmoothL1(var): {:.3}, {:.3}, {:.3}, {:.3}'.format(
-            self.running_var[0].item(),
-            self.running_var[1].item(),
-            self.running_var[2].item(),
-            self.running_var[3].item()
-        ))
         beta = beta.clamp(max=self.beta, min=1e-3)
-
-        #beta = (self.running_mean - self.running_var).clamp(
-        #    max=self.beta, min=1e-3)
 
         beta = beta.view(-1, self.num_features).to(n.device)
         cond = n < beta.expand_as(n)
